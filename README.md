@@ -11,7 +11,7 @@
 ```bash
 npm install
 npm run build    # writes dist/index.html
-npm run check    # needs ../devfest-lagos-26-starter and ../devfest-lagos-26-crud-v1
+npm run check    # needs ../devfest-lagos-26-starter
 ```
 
 Code blocks are pasted by the check when the line above them reads
