@@ -17,4 +17,7 @@ npm run check    # needs ../devfest-lagos-26-starter
 Code blocks are pasted by the check when the line above them reads
 "Replace the contents of `path` with the code below." or "Create `path` with the code below."
 
-Before publishing, set `repo:` at the top of the Markdown file to the starter project's GitHub URL.
+## Deploying
+
+Every push to `main` rebuilds the page and publishes it to the `gh-pages` branch
+(`.github/workflows/pages.yml`). Live at https://babatundelmd.github.io/devfest-lagos-26-codelab/
