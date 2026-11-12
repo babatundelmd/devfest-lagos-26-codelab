@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
+import { loadLanguages } from './build.mjs';
 import { parseCodelab } from './parse.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -10,6 +11,10 @@ const full = resolve(process.argv[3] ?? join(root, '../devfest-lagos-26-crud-v1'
 const untilStep = process.env.UNTIL ? Number(process.env.UNTIL) : Infinity;
 
 const { steps } = parseCodelab(readFileSync(join(root, 'signals-resources-signal-forms.md'), 'utf8'));
+for (const lang of loadLanguages().slice(1)) {
+  console.log(`Translation ${lang.label}: ${lang.doc.steps.length} steps, code blocks match English`);
+}
+
 const work = mkdtempSync(join(process.env.TMPDIR ?? tmpdir(), 'codelab-check-'));
 
 cpSync(starter, work, {

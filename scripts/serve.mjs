@@ -21,7 +21,7 @@ const rebuild = () => {
   clearTimeout(timer);
   timer = setTimeout(build, 100);
 };
-watch(join(root, 'signals-resources-signal-forms.md'), rebuild);
+watch(root, (_, file) => file?.endsWith('.md') && rebuild());
 watch(join(root, 'scripts'), (_, file) => file !== 'serve.mjs' && rebuild());
 
 const server = createServer((req, res) => {
