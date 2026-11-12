@@ -1,0 +1,1388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Signals, Resources, Signal Forms</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Build a small CRUD app with Angular signals for state, resources for loading data and Signal Forms for input and validation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky top bar, step rail on the left, one reading card per step (rail collapses to a drawer on phones) */
+:root {
+  --bg: #f4f5f8;
+  --surface: #ffffff;
+  --surface-2: #eef0f5;
+  --line: #dde0e8;
+  --ink: #1d1f26;
+  --muted: #5d6170;
+  --accent: #1a5fd6;
+  --accent-ink: #ffffff;
+  --accent-tint: #e6eefc;
+  --done: #1e8e3e;
+  --blue: #4285f4;
+  --red: #ea4335;
+  --yellow: #fbbc04;
+  --green: #34a853;
+  --tip-bg: #e7f4ea;
+  --tip-line: #34a853;
+  --warn-bg: #fdf0e6;
+  --warn-line: #e8710a;
+  --code-bg: #f6f7fa;
+  --code-ink: #24272f;
+  --code-head: #eceef3;
+  --hl-keyword: #a626a4;
+  --hl-string: #1b7c3a;
+  --hl-title: #1a5fd6;
+  --hl-number: #b45309;
+  --hl-comment: #6b7280;
+  --hl-tag: #c2185b;
+  --hl-attr: #9a5b00;
+  --font-ui: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --rail: 19rem;
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111318;
+    --surface: #1a1d23;
+    --surface-2: #23262e;
+    --line: #2e323b;
+    --ink: #eceef3;
+    --muted: #a0a5b2;
+    --accent: #7aa7ff;
+    --accent-ink: #0d1220;
+    --accent-tint: #1d2a44;
+    --done: #5bc27a;
+    --tip-bg: #16281c;
+    --tip-line: #4caf6a;
+    --warn-bg: #2d2015;
+    --warn-line: #f29c4b;
+    --code-bg: #14161b;
+    --code-ink: #dfe3ea;
+    --code-head: #1f2229;
+    --hl-keyword: #d49cf0;
+    --hl-string: #8fd19e;
+    --hl-title: #8ab4ff;
+    --hl-number: #f5b971;
+    --hl-comment: #8a909c;
+    --hl-tag: #ff8fb4;
+    --hl-attr: #f2c27a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111318;
+  --surface: #1a1d23;
+  --surface-2: #23262e;
+  --line: #2e323b;
+  --ink: #eceef3;
+  --muted: #a0a5b2;
+  --accent: #7aa7ff;
+  --accent-ink: #0d1220;
+  --accent-tint: #1d2a44;
+  --done: #5bc27a;
+  --tip-bg: #16281c;
+  --tip-line: #4caf6a;
+  --warn-bg: #2d2015;
+  --warn-line: #f29c4b;
+  --code-bg: #14161b;
+  --code-ink: #dfe3ea;
+  --code-head: #1f2229;
+  --hl-keyword: #d49cf0;
+  --hl-string: #8fd19e;
+  --hl-title: #8ab4ff;
+  --hl-number: #f5b971;
+  --hl-comment: #8a909c;
+  --hl-tag: #ff8fb4;
+  --hl-attr: #f2c27a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-padding-top: 6rem; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 16px/1.65 var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 30;
+  background: var(--surface);
+}
+
+.topbar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-block: .75rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.menu {
+  display: none;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  padding: .375rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.mark { display: grid; grid-template-columns: repeat(2, .55rem); gap: 3px; flex: none; }
+.mark i { display: block; inline-size: .55rem; block-size: .55rem; border-radius: 2px; }
+.mark i:nth-child(1) { background: var(--blue); }
+.mark i:nth-child(2) { background: var(--red); }
+.mark i:nth-child(3) { background: var(--yellow); }
+.mark i:nth-child(4) { background: var(--green); }
+.heading { min-width: 0; flex: 1; }
+.eyebrow {
+  margin: 0;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.topbar h1 {
+  margin: 0;
+  font-size: clamp(1rem, 1.6vw, 1.3rem);
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.remaining {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin: 0;
+  flex: none;
+  font-size: .95rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.progress { position: absolute; inset: auto 0 -1px 0; height: 3px; }
+.progress span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width .3s ease;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  gap: 2rem;
+  max-width: 82rem;
+  margin: 0 auto;
+  padding-block: 1.5rem 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.steps { position: sticky; top: 6rem; align-self: start; max-height: calc(100vh - 7rem); overflow-y: auto; }
+.steps ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.steps a {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  padding: .8rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: .95rem;
+  line-height: 1.35;
+}
+.steps a:hover { border-color: var(--accent); }
+.steps a:focus-visible, .btn:focus-visible, .copy:focus-visible, .menu:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.dot {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: .85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.steps a.done .dot { background: var(--accent-tint); color: var(--accent); }
+.steps a[aria-current="step"] { border-color: var(--accent); font-weight: 600; box-shadow: 0 1px 3px rgb(0 0 0 / .08); }
+.steps a[aria-current="step"] .dot { background: var(--accent); color: var(--accent-ink); }
+.steps .meta { margin: 1rem .25rem 0; font-size: .85rem; color: var(--muted); }
+
+main { min-width: 0; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+}
+.step > :first-child { margin-top: 0; }
+.step h2 {
+  margin: 0 0 1.25rem;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-weight: 600;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.step h2 .num { color: var(--muted); font-weight: 500; }
+.step h3 { margin: 2rem 0 .5rem; font-size: 1.2rem; font-weight: 600; }
+.step p, .step li { max-width: 68ch; }
+.step ul, .step ol { padding-left: 1.4rem; }
+.step li + li { margin-top: .35rem; }
+.step a { color: var(--accent); text-underline-offset: 2px; }
+.step strong { font-weight: 600; }
+.step :not(pre) > code {
+  font: 500 .86em var(--font-code);
+  background: var(--surface-2);
+  padding: .1em .35em;
+  border-radius: 5px;
+}
+
+.table { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--surface-2); font-weight: 600; font-size: .85rem; }
+tr:last-child td { border-bottom: 0; }
+
+.code { margin: 1rem 0 1.5rem; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--code-bg); }
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .4rem .5rem .4rem .9rem;
+  background: var(--code-head);
+  border-bottom: 1px solid var(--line);
+  font: 500 .8rem var(--font-code);
+  color: var(--muted);
+}
+.code.paste .code-head .file { color: var(--ink); overflow-wrap: anywhere; }
+.copy {
+  flex: none;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 .78rem var(--font-ui);
+  padding: .3rem .75rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.copy:hover { border-color: var(--accent); color: var(--accent); }
+.copy.copied { background: var(--done); border-color: var(--done); color: #fff; }
+.code pre { margin: 0; padding: 1rem 1.1rem; overflow-x: auto; }
+.code code { font: 400 .85rem/1.6 var(--font-code); color: var(--code-ink); tab-size: 2; }
+
+.hljs-keyword, .hljs-built_in, .hljs-selector-tag { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-title, .hljs-title.function_, .hljs-title.class_ { color: var(--hl-title); }
+.hljs-number, .hljs-literal { color: var(--hl-number); }
+.hljs-comment, .hljs-meta { color: var(--hl-comment); font-style: italic; }
+.hljs-name, .hljs-tag { color: var(--hl-tag); }
+.hljs-attr, .hljs-attribute, .hljs-property, .hljs-params { color: var(--hl-attr); }
+.hljs-variable, .hljs-subst, .hljs-punctuation { color: inherit; }
+
+aside {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  border-left: 4px solid;
+  font-size: .97rem;
+}
+aside.positive { background: var(--tip-bg); border-color: var(--tip-line); }
+aside.negative { background: var(--warn-bg); border-color: var(--warn-line); }
+aside code { font: 500 .86em var(--font-code); }
+
+.pager { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; }
+.btn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--accent);
+  font: 600 1rem var(--font-ui);
+  padding: .7rem 1.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); margin-left: auto; }
+.btn[hidden] { display: none !important; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .menu { display: inline-flex; }
+  .remaining span { font-size: .85rem; }
+  .steps {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    width: min(20rem, 88vw);
+    max-height: none;
+    padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem calc(1rem + env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+    background: var(--bg);
+    border-right: 1px solid var(--line);
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+  }
+  .steps.open { transform: none; box-shadow: 0 0 0 100vmax rgb(0 0 0 / .35); }
+}
+@media (max-width: 560px) {
+  .eyebrow, .mark { display: none; }
+  .remaining svg { display: none; }
+  .topbar { gap: .6rem; }
+  .btn { padding: .65rem 1.2rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <button type="button" class="menu" aria-label="Show steps" aria-expanded="false" aria-controls="steps">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <div class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <div class="heading">
+    <p class="eyebrow">DevFest Lagos 2026 · Codelab</p>
+    <h1>Signals, Resources, and Signal Forms: Composing Modern Angular End-to-End</h1>
+  </div>
+  <p class="remaining"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span id="remaining">56 mins remaining</span></p>
+  <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+</header>
+<div class="layout">
+  <nav class="steps" id="steps" aria-label="Codelab steps">
+    <ol>
+<li><a href="#1" data-step="1"><span class="dot">1</span><span class="label">Introduction</span></a></li>
+<li><a href="#2" data-step="2"><span class="dot">2</span><span class="label">Before you begin</span></a></li>
+<li><a href="#3" data-step="3"><span class="dot">3</span><span class="label">Tour the starter project</span></a></li>
+<li><a href="#4" data-step="4"><span class="dot">4</span><span class="label">Connect to the API</span></a></li>
+<li><a href="#5" data-step="5"><span class="dot">5</span><span class="label">Load talks with httpResource</span></a></li>
+<li><a href="#6" data-step="6"><span class="dot">6</span><span class="label">Search and filter with signal and computed</span></a></li>
+<li><a href="#7" data-step="7"><span class="dot">7</span><span class="label">Delete with an optimistic update</span></a></li>
+<li><a href="#8" data-step="8"><span class="dot">8</span><span class="label">Define the form rules with a schema</span></a></li>
+<li><a href="#9" data-step="9"><span class="dot">9</span><span class="label">Build the form</span></a></li>
+<li><a href="#10" data-step="10"><span class="dot">10</span><span class="label">Submit the form</span></a></li>
+<li><a href="#11" data-step="11"><span class="dot">11</span><span class="label">Edit a talk with linkedSignal</span></a></li>
+<li><a href="#12" data-step="12"><span class="dot">12</span><span class="label">Congratulations</span></a></li>
+    </ol>
+    <p class="meta">Babatunde Lamidi · 56 min</p>
+  </nav>
+  <main>
+    <article class="card">
+<section class="step" id="s1" data-step="1" data-minutes="2" hidden>
+  <h2><span class="num">1.</span> Introduction</h2>
+  <p>In this codelab you build the DevFest Lagos <strong>Call for Talks</strong> app: a small CRUD app where speakers can list, search, create, edit and delete talk proposals.</p>
+<p>It is small on purpose. Every line of code you add is one of three ideas:</p>
+<div class="table"><table><thead><tr><th>Idea</th><th>API</th><th>Job in this app</th></tr></thead><tbody><tr><td><strong>Signals</strong></td><td><code>signal</code>, <code>computed</code>, <code>linkedSignal</code></td><td>Hold state and derive new state from it</td></tr><tr><td><strong>Resources</strong></td><td><code>httpResource</code></td><td>Load data, with loading and error states built in</td></tr><tr><td><strong>Signal Forms</strong></td><td><code>form</code>, <code>schema</code>, <code>[formField]</code></td><td>Bind inputs, validate them and submit</td></tr></tbody></table></div><figure class="code"><div class="code-head plain"><span class="lang">text</span><button type="button" class="copy">Copy</button></div><pre><code>+-------------+    httpResource (GET)    +---------------+
+|   Angular   | &lt;----------------------- |  json-server  |
+|     app     | -----------------------&gt; |  api/db.json  |
++-------------+  HttpClient (POST/PUT/   +---------------+
+                       DELETE)</code></pre></figure><h3>What you&#39;ll do</h3>
+<ul>
+<li><strong>Step 4:</strong> Connect to the API with <code>HttpClient</code>.</li>
+<li><strong>Steps 5 to 7:</strong> Build the talks list with <code>httpResource</code>, <code>signal</code> and <code>computed</code>.</li>
+<li><strong>Steps 8 to 10:</strong> Build the talk form with Signal Forms and submit it.</li>
+<li><strong>Step 11:</strong> Reuse the same form to edit a talk with <code>linkedSignal</code>.</li>
+</ul>
+<h3>What you&#39;ll need</h3>
+<ul>
+<li><a href="https://nodejs.org" target="_blank" rel="noopener">Node.js</a> 22.22 or newer</li>
+<li>Git and a code editor</li>
+<li>A web browser such as Chrome</li>
+</ul>
+<aside class="positive">
+<strong>How this codelab works:</strong> you never type code. Each step gives you whole files to paste over the starter files. Use the copy button on each code block, then read the short "What just happened" note that follows.
+</aside>
+</section>
+<section class="step" id="s2" data-step="2" data-minutes="5" hidden>
+  <h2><span class="num">2.</span> Before you begin</h2>
+  <h3>Get the starter project</h3>
+<p>Clone the starter project and install its dependencies:</p>
+<figure class="code"><div class="code-head plain"><span class="lang">bash</span><button type="button" class="copy">Copy</button></div><pre><code>git <span class="hljs-built_in">clone</span> https://github.com/babatundelmd/devfest-lagos-26-starter
+<span class="hljs-built_in">cd</span> devfest-lagos-26-starter
+npm install</code></pre></figure><h3>Start the app</h3>
+<figure class="code"><div class="code-head plain"><span class="lang">bash</span><button type="button" class="copy">Copy</button></div><pre><code>npm start</code></pre></figure><p>This starts two things:</p>
+<ul>
+<li><strong>json-server</strong> on port 3000. It turns <code>api/db.json</code> into a REST API.</li>
+<li><strong>The Angular dev server</strong> on port 4200. It forwards every request that starts with <code>/api</code> to json-server.</li>
+</ul>
+<p>Open <a href="http://localhost:4200" target="_blank" rel="noopener">http://localhost:4200</a>. You should see the DevFest Lagos header and an empty Talks page.</p>
+<aside class="negative">
+<strong>Port 3000 already taken?</strong> The start script picks the next free port for the API on its own and prints which one it chose. You don't need to change anything.
+</aside>
+
+<h3>Check the tests</h3>
+<p>In a second terminal, run:</p>
+<figure class="code"><div class="code-head plain"><span class="lang">bash</span><button type="button" class="copy">Copy</button></div><pre><code>npm <span class="hljs-built_in">test</span></code></pre></figure><p>Four tests fail. That&#39;s expected: they test the form rules you write in step 8.</p>
+
+</section>
+<section class="step" id="s3" data-step="3" data-minutes="3" hidden>
+  <h2><span class="num">3.</span> Tour the starter project</h2>
+  <p>Open the project in your editor. Everything you work on is in <code>src/app/talks</code>:</p>
+<div class="table"><table><thead><tr><th>File</th><th>State</th></tr></thead><tbody><tr><td><code>talk.ts</code></td><td><strong>Done.</strong> The <code>Talk</code> type, the tracks and levels, and two helpers</td></tr><tr><td><code>talk-schema.spec.ts</code></td><td><strong>Done.</strong> Tests for the form rules</td></tr><tr><td><code>*.css</code></td><td><strong>Done.</strong> All the styling</td></tr><tr><td><code>talks-api.ts</code></td><td>Empty. You fill it in step 4</td></tr><tr><td><code>talk-list.ts</code> / <code>.html</code></td><td>Placeholder. You fill them in steps 5 to 7</td></tr><tr><td><code>talk-schema.ts</code></td><td>Empty. You fill it in step 8</td></tr><tr><td><code>talk-form.ts</code> / <code>.html</code></td><td>Placeholder. You fill them in steps 9 to 11</td></tr></tbody></table></div><p>Open <code>talk.ts</code>. This is the shape of every talk in the app:</p>
+<figure class="code"><div class="code-head plain"><span class="lang">ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">export</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">Talk</span> {
+  <span class="hljs-attr">id</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">title</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">speaker</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">track</span>: <span class="hljs-title class_">Track</span>;
+  <span class="hljs-attr">level</span>: <span class="hljs-title class_">Level</span>;
+  <span class="hljs-attr">duration</span>: <span class="hljs-built_in">number</span>;
+  <span class="hljs-attr">abstract</span>: <span class="hljs-built_in">string</span>;
+}
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">type</span> <span class="hljs-title class_">TalkDraft</span> = <span class="hljs-title class_">Omit</span>&lt;<span class="hljs-title class_">Talk</span>, <span class="hljs-string">&#x27;id&#x27;</span>&gt;;</code></pre></figure><p>A <code>TalkDraft</code> is a talk without an <code>id</code>. The form works with drafts, because a new talk has no <code>id</code> until the server gives it one.</p>
+<p>Now open <code>src/app/app.routes.ts</code>. There are three pages:</p>
+<div class="table"><table><thead><tr><th>URL</th><th>Component</th><th>Purpose</th></tr></thead><tbody><tr><td><code>/</code></td><td><code>TalkList</code></td><td>All talks</td></tr><tr><td><code>/talks/new</code></td><td><code>TalkForm</code></td><td>Create a talk</td></tr><tr><td><code>/talks/:id</code></td><td><code>TalkForm</code></td><td>Edit a talk</td></tr></tbody></table></div><p>The same <code>TalkForm</code> component handles both creating and editing. You&#39;ll see how in step 11.</p>
+
+</section>
+<section class="step" id="s4" data-step="4" data-minutes="5" hidden>
+  <h2><span class="num">4.</span> Connect to the API</h2>
+  <h3>Look at the API</h3>
+<p>json-server gives you a full REST API for the <code>talks</code> array in <code>api/db.json</code>. With <code>npm start</code> running, open <a href="http://localhost:4200/api/talks" target="_blank" rel="noopener">http://localhost:4200/api/talks</a> in your browser. You get the talks as JSON.</p>
+<p>These are the endpoints the app uses:</p>
+<div class="table"><table><thead><tr><th>Method</th><th>URL</th><th>Does</th></tr></thead><tbody><tr><td><code>GET</code></td><td><code>/api/talks</code></td><td>List all talks</td></tr><tr><td><code>GET</code></td><td><code>/api/talks/:id</code></td><td>Get one talk</td></tr><tr><td><code>POST</code></td><td><code>/api/talks</code></td><td>Create a talk</td></tr><tr><td><code>PUT</code></td><td><code>/api/talks/:id</code></td><td>Replace a talk</td></tr><tr><td><code>DELETE</code></td><td><code>/api/talks/:id</code></td><td>Delete a talk</td></tr></tbody></table></div><p>Try <a href="http://localhost:4200/api/talks/1" target="_blank" rel="noopener">http://localhost:4200/api/talks/1</a> to see a single talk.</p>
+<h3>Provide HttpClient</h3>
+<p>Angular apps need to opt in to <code>HttpClient</code>. Replace the contents of <code>src/app/app.config.ts</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/app.config.ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> { provideHttpClient, withFetch } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/common/http&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">ApplicationConfig</span>, provideBrowserGlobalErrorListeners } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/core&#x27;</span>;
+<span class="hljs-keyword">import</span> { provideRouter, withComponentInputBinding } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/router&#x27;</span>;
+<span class="hljs-keyword">import</span> { routes } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./app.routes&#x27;</span>;
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> <span class="hljs-attr">appConfig</span>: <span class="hljs-title class_">ApplicationConfig</span> = {
+  <span class="hljs-attr">providers</span>: [
+    <span class="hljs-title function_">provideBrowserGlobalErrorListeners</span>(),
+    <span class="hljs-title function_">provideRouter</span>(routes, <span class="hljs-title function_">withComponentInputBinding</span>()),
+    <span class="hljs-title function_">provideHttpClient</span>(<span class="hljs-title function_">withFetch</span>()),
+  ],
+};</code></pre></figure><h3>Write the API service</h3>
+<p>Reading data is the job of <code>httpResource</code>, which you meet in the next step. This service handles the three writes. Replace the contents of <code>src/app/talks/talks-api.ts</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talks-api.ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> { <span class="hljs-title class_">HttpClient</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/common/http&#x27;</span>;
+<span class="hljs-keyword">import</span> { inject, <span class="hljs-title class_">Injectable</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/core&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Talk</span>, <span class="hljs-title class_">TalkDraft</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk&#x27;</span>;
+
+<span class="hljs-meta">@Injectable</span>({ <span class="hljs-attr">providedIn</span>: <span class="hljs-string">&#x27;root&#x27;</span> })
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TalksApi</span> {
+  <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> http = <span class="hljs-title function_">inject</span>(<span class="hljs-title class_">HttpClient</span>);
+
+  <span class="hljs-title function_">create</span>(<span class="hljs-attr">draft</span>: <span class="hljs-title class_">TalkDraft</span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">Talk</span>&gt; {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span>
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">http</span>.<span class="hljs-property">post</span>&lt;<span class="hljs-title class_">Talk</span>&gt;(<span class="hljs-string">&#x27;/api/talks&#x27;</span>, draft).<span class="hljs-title function_">subscribe</span>({ <span class="hljs-attr">next</span>: resolve, <span class="hljs-attr">error</span>: reject }),
+    );
+  }
+
+  <span class="hljs-title function_">update</span>(<span class="hljs-attr">id</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">draft</span>: <span class="hljs-title class_">TalkDraft</span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">Talk</span>&gt; {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span>
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">http</span>.<span class="hljs-property">put</span>&lt;<span class="hljs-title class_">Talk</span>&gt;(<span class="hljs-string">`/api/talks/<span class="hljs-subst">${id}</span>`</span>, { id, ...draft }).<span class="hljs-title function_">subscribe</span>({ <span class="hljs-attr">next</span>: resolve, <span class="hljs-attr">error</span>: reject }),
+    );
+  }
+
+  <span class="hljs-title function_">delete</span>(<span class="hljs-params"><span class="hljs-attr">id</span>: <span class="hljs-built_in">string</span></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">http</span>.<span class="hljs-title function_">delete</span>(<span class="hljs-string">`/api/talks/<span class="hljs-subst">${id}</span>`</span>);
+  }
+}</code></pre></figure><h3>What just happened</h3>
+<ul>
+<li><code>provideHttpClient(withFetch())</code> makes <code>HttpClient</code> available everywhere and tells it to use the browser&#39;s <code>fetch</code> API.</li>
+<li><code>withComponentInputBinding()</code> was already there. It passes route parameters such as <code>:id</code> straight into component inputs. You&#39;ll use it in step 11.</li>
+<li><code>create</code> and <code>update</code> wrap the request in a <code>Promise</code>. Signal Forms waits on a Promise to know when saving has finished, as you&#39;ll see in step 10.</li>
+<li><code>delete</code> returns the request as it is. Nothing is sent until someone calls <code>.subscribe()</code>.</li>
+</ul>
+<h3>Check it works</h3>
+<p>The terminal running <code>npm start</code> shows no errors and the app still loads. Nothing on the page changes yet, because nothing calls the service.</p>
+
+</section>
+<section class="step" id="s5" data-step="5" data-minutes="6" hidden>
+  <h2><span class="num">5.</span> Load talks with httpResource</h2>
+  <p>Replace the contents of <code>src/app/talks/talk-list.ts</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-list.ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> { httpResource } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/common/http&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Component</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/core&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">RouterLink</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/router&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Talk</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk&#x27;</span>;
+
+<span class="hljs-meta">@Component</span>({
+  <span class="hljs-attr">selector</span>: <span class="hljs-string">&#x27;app-talk-list&#x27;</span>,
+  <span class="hljs-attr">imports</span>: [<span class="hljs-title class_">RouterLink</span>],
+  <span class="hljs-attr">templateUrl</span>: <span class="hljs-string">&#x27;./talk-list.html&#x27;</span>,
+  <span class="hljs-attr">styleUrl</span>: <span class="hljs-string">&#x27;./talk-list.css&#x27;</span>,
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TalkList</span> {
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> talks = httpResource&lt;<span class="hljs-title class_">Talk</span>[]&gt;(<span class="hljs-function">() =&gt;</span> <span class="hljs-string">&#x27;/api/talks&#x27;</span>, { <span class="hljs-attr">defaultValue</span>: [] });
+}</code></pre></figure><p>Replace the contents of <code>src/app/talks/talk-list.html</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-list.html</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-tag">&lt;<span class="hljs-name">header</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;page-header&quot;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>Talks<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">p</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;lede&quot;</span>&gt;</span>
+      @if (talks.isLoading()) {
+        Loading…
+      } @else {
+        {{ talks.value().length }} talks
+      }
+    <span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/talks/new&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn primary&quot;</span>&gt;</span>+ New talk<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">header</span>&gt;</span>
+
+@if (talks.error()) {
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;alert&quot;</span> <span class="hljs-attr">role</span>=<span class="hljs-string">&quot;alert&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>Could not load talks. Is the API running?<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;button&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn&quot;</span> (<span class="hljs-attr">click</span>)=<span class="hljs-string">&quot;talks.reload()&quot;</span>&gt;</span>Try again<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+} @else if (talks.isLoading() &amp;&amp; talks.value().length === 0) {
+  <span class="hljs-tag">&lt;<span class="hljs-name">ul</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;list&quot;</span> <span class="hljs-attr">aria-busy</span>=<span class="hljs-string">&quot;true&quot;</span>&gt;</span>
+    @for (i of [1, 2, 3]; track i) {
+      <span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;skeleton&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>
+    }
+  <span class="hljs-tag">&lt;/<span class="hljs-name">ul</span>&gt;</span>
+} @else {
+  <span class="hljs-tag">&lt;<span class="hljs-name">ul</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;list&quot;</span>&gt;</span>
+    @for (talk of talks.value(); track talk.id) {
+      <span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;row&quot;</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;info&quot;</span>&gt;</span>
+          <span class="hljs-tag">&lt;<span class="hljs-name">a</span> [<span class="hljs-attr">routerLink</span>]=<span class="hljs-string">&quot;[&#x27;/talks&#x27;, talk.id]&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;title&quot;</span>&gt;</span>{{ talk.title }}<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+          <span class="hljs-tag">&lt;<span class="hljs-name">p</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;meta&quot;</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;track&quot;</span> [<span class="hljs-attr">attr.data-track</span>]=<span class="hljs-string">&quot;talk.track&quot;</span>&gt;</span>{{ talk.track }}<span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span>
+            {{ talk.speaker }} · {{ talk.level }} · {{ talk.duration }} min
+          <span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;actions&quot;</span>&gt;</span>
+          <span class="hljs-tag">&lt;<span class="hljs-name">a</span> [<span class="hljs-attr">routerLink</span>]=<span class="hljs-string">&quot;[&#x27;/talks&#x27;, talk.id]&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn&quot;</span>&gt;</span>Edit<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+      <span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>
+    } @empty {
+      <span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;empty&quot;</span>&gt;</span>No talks yet. <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/talks/new&quot;</span>&gt;</span>Add the first one.<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>
+    }
+  <span class="hljs-tag">&lt;/<span class="hljs-name">ul</span>&gt;</span>
+}</code></pre></figure><h3>What just happened</h3>
+<p><code>httpResource</code> is a GET request that behaves like a signal. You give it a function that returns a URL, and it gives you back a set of signals:</p>
+<div class="table"><table><thead><tr><th>Signal</th><th>Meaning</th></tr></thead><tbody><tr><td><code>value()</code></td><td>The data. Starts as <code>defaultValue</code>, here <code>[]</code></td></tr><tr><td><code>isLoading()</code></td><td><code>true</code> while the request is in flight</td></tr><tr><td><code>error()</code></td><td>The error, if the request failed</td></tr><tr><td><code>hasValue()</code></td><td><code>true</code> once there is data</td></tr><tr><td><code>reload()</code></td><td>A method that sends the request again</td></tr></tbody></table></div><p>You didn&#39;t subscribe to anything or store anything by hand. The template reads the signals, and Angular updates the page whenever they change.</p>
+<aside class="positive">
+The URL is a function for a reason. If it read a signal, such as a route id, the resource would send a new request every time that signal changed. You'll use exactly that in step 11.
+</aside>
+
+<h3>Check it works</h3>
+<ol>
+<li>Refresh the app. You see 6 talks.</li>
+<li>In Chrome DevTools, open the <strong>Network</strong> tab and set throttling to <strong>Slow 4G</strong>. Refresh again and watch the skeleton rows appear while the request loads. Set throttling back to <strong>No throttling</strong> afterwards.</li>
+</ol>
+
+</section>
+<section class="step" id="s6" data-step="6" data-minutes="5" hidden>
+  <h2><span class="num">6.</span> Search and filter with signal and computed</h2>
+  <p>Replace the contents of <code>src/app/talks/talk-list.ts</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-list.ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> { httpResource } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/common/http&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Component</span>, computed, signal } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/core&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">RouterLink</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/router&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Talk</span>, <span class="hljs-title class_">Track</span>, <span class="hljs-variable constant_">TRACKS</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk&#x27;</span>;
+
+<span class="hljs-meta">@Component</span>({
+  <span class="hljs-attr">selector</span>: <span class="hljs-string">&#x27;app-talk-list&#x27;</span>,
+  <span class="hljs-attr">imports</span>: [<span class="hljs-title class_">RouterLink</span>],
+  <span class="hljs-attr">templateUrl</span>: <span class="hljs-string">&#x27;./talk-list.html&#x27;</span>,
+  <span class="hljs-attr">styleUrl</span>: <span class="hljs-string">&#x27;./talk-list.css&#x27;</span>,
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TalkList</span> {
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> talks = httpResource&lt;<span class="hljs-title class_">Talk</span>[]&gt;(<span class="hljs-function">() =&gt;</span> <span class="hljs-string">&#x27;/api/talks&#x27;</span>, { <span class="hljs-attr">defaultValue</span>: [] });
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> query = <span class="hljs-title function_">signal</span>(<span class="hljs-string">&#x27;&#x27;</span>);
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> track = signal&lt;<span class="hljs-title class_">Track</span> | <span class="hljs-string">&#x27;All&#x27;</span>&gt;(<span class="hljs-string">&#x27;All&#x27;</span>);
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> <span class="hljs-attr">trackOptions</span>: (<span class="hljs-title class_">Track</span> | <span class="hljs-string">&#x27;All&#x27;</span>)[] = [<span class="hljs-string">&#x27;All&#x27;</span>, ...<span class="hljs-variable constant_">TRACKS</span>];
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> filtered = <span class="hljs-title function_">computed</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-keyword">const</span> talks = <span class="hljs-variable language_">this</span>.<span class="hljs-property">talks</span>.<span class="hljs-title function_">hasValue</span>() ? <span class="hljs-variable language_">this</span>.<span class="hljs-property">talks</span>.<span class="hljs-title function_">value</span>() : [];
+    <span class="hljs-keyword">const</span> query = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">query</span>().<span class="hljs-title function_">trim</span>().<span class="hljs-title function_">toLowerCase</span>();
+    <span class="hljs-keyword">const</span> track = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">track</span>();
+
+    <span class="hljs-keyword">return</span> talks.<span class="hljs-title function_">filter</span>(
+      <span class="hljs-function">(<span class="hljs-params">talk</span>) =&gt;</span>
+        (track === <span class="hljs-string">&#x27;All&#x27;</span> || talk.<span class="hljs-property">track</span> === track) &amp;&amp;
+        <span class="hljs-string">`<span class="hljs-subst">${talk.title}</span> <span class="hljs-subst">${talk.speaker}</span>`</span>.<span class="hljs-title function_">toLowerCase</span>().<span class="hljs-title function_">includes</span>(query),
+    );
+  });
+}</code></pre></figure><p>Replace the contents of <code>src/app/talks/talk-list.html</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-list.html</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-tag">&lt;<span class="hljs-name">header</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;page-header&quot;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>Talks<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">p</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;lede&quot;</span>&gt;</span>
+      @if (talks.isLoading()) {
+        Loading…
+      } @else {
+        {{ filtered().length }} of {{ talks.value().length }} talks
+      }
+    <span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/talks/new&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn primary&quot;</span>&gt;</span>+ New talk<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">header</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;filters&quot;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">input</span>
+    <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;search&quot;</span>
+    <span class="hljs-attr">placeholder</span>=<span class="hljs-string">&quot;Search by title or speaker…&quot;</span>
+    <span class="hljs-attr">aria-label</span>=<span class="hljs-string">&quot;Search talks&quot;</span>
+    [<span class="hljs-attr">value</span>]=<span class="hljs-string">&quot;query()&quot;</span>
+    (<span class="hljs-attr">input</span>)=<span class="hljs-string">&quot;query.set($any($event.target).value)&quot;</span>
+  /&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;chips&quot;</span> <span class="hljs-attr">role</span>=<span class="hljs-string">&quot;group&quot;</span> <span class="hljs-attr">aria-label</span>=<span class="hljs-string">&quot;Track&quot;</span>&gt;</span>
+    @for (option of trackOptions; track option) {
+      <span class="hljs-tag">&lt;<span class="hljs-name">button</span>
+        <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;button&quot;</span>
+        <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;chip&quot;</span>
+        [<span class="hljs-attr">attr.aria-pressed</span>]=<span class="hljs-string">&quot;track() === option&quot;</span>
+        (<span class="hljs-attr">click</span>)=<span class="hljs-string">&quot;track.set(option)&quot;</span>
+      &gt;</span>
+        {{ option }}
+      <span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+    }
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+@if (talks.error()) {
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;alert&quot;</span> <span class="hljs-attr">role</span>=<span class="hljs-string">&quot;alert&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>Could not load talks. Is the API running?<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;button&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn&quot;</span> (<span class="hljs-attr">click</span>)=<span class="hljs-string">&quot;talks.reload()&quot;</span>&gt;</span>Try again<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+} @else if (talks.isLoading() &amp;&amp; talks.value().length === 0) {
+  <span class="hljs-tag">&lt;<span class="hljs-name">ul</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;list&quot;</span> <span class="hljs-attr">aria-busy</span>=<span class="hljs-string">&quot;true&quot;</span>&gt;</span>
+    @for (i of [1, 2, 3]; track i) {
+      <span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;skeleton&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>
+    }
+  <span class="hljs-tag">&lt;/<span class="hljs-name">ul</span>&gt;</span>
+} @else {
+  <span class="hljs-tag">&lt;<span class="hljs-name">ul</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;list&quot;</span>&gt;</span>
+    @for (talk of filtered(); track talk.id) {
+      <span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;row&quot;</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;info&quot;</span>&gt;</span>
+          <span class="hljs-tag">&lt;<span class="hljs-name">a</span> [<span class="hljs-attr">routerLink</span>]=<span class="hljs-string">&quot;[&#x27;/talks&#x27;, talk.id]&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;title&quot;</span>&gt;</span>{{ talk.title }}<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+          <span class="hljs-tag">&lt;<span class="hljs-name">p</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;meta&quot;</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;track&quot;</span> [<span class="hljs-attr">attr.data-track</span>]=<span class="hljs-string">&quot;talk.track&quot;</span>&gt;</span>{{ talk.track }}<span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span>
+            {{ talk.speaker }} · {{ talk.level }} · {{ talk.duration }} min
+          <span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;actions&quot;</span>&gt;</span>
+          <span class="hljs-tag">&lt;<span class="hljs-name">a</span> [<span class="hljs-attr">routerLink</span>]=<span class="hljs-string">&quot;[&#x27;/talks&#x27;, talk.id]&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn&quot;</span>&gt;</span>Edit<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+      <span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>
+    } @empty {
+      <span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;empty&quot;</span>&gt;</span>
+        @if (talks.value().length) {
+          No talks match your search.
+        } @else {
+          No talks yet. <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/talks/new&quot;</span>&gt;</span>Add the first one.<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+        }
+      <span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>
+    }
+  <span class="hljs-tag">&lt;/<span class="hljs-name">ul</span>&gt;</span>
+}</code></pre></figure><h3>What just happened</h3>
+<ul>
+<li><code>query</code> and <code>track</code> are <strong>writable signals</strong>. The search box calls <code>query.set(...)</code> on every keystroke, and each chip calls <code>track.set(...)</code> when clicked.</li>
+<li><code>filtered</code> is a <strong>computed signal</strong>. It reads <code>talks</code>, <code>query</code> and <code>track</code>, so Angular knows to recalculate it when any of them changes, and only then.</li>
+<li>The list now loops over <code>filtered()</code> instead of <code>talks.value()</code>.</li>
+</ul>
+<p>There is no event wiring between the search box and the list. The list depends on <code>filtered</code>, which depends on <code>query</code>, and Angular follows that chain for you.</p>
+<h3>Check it works</h3>
+<ol>
+<li>Type <code>flutter</code> in the search box. Only 1 talk is left, and the header reads &quot;1 of 6 talks&quot;.</li>
+<li>Clear the search and click the <strong>AI</strong> chip. Only the 2 AI talks are left.</li>
+<li>Type something that matches nothing. You see &quot;No talks match your search.&quot;</li>
+</ol>
+
+</section>
+<section class="step" id="s7" data-step="7" data-minutes="5" hidden>
+  <h2><span class="num">7.</span> Delete with an optimistic update</h2>
+  <p>Replace the contents of <code>src/app/talks/talk-list.ts</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-list.ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> { httpResource } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/common/http&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Component</span>, computed, inject, signal } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/core&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">RouterLink</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/router&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Talk</span>, <span class="hljs-title class_">Track</span>, <span class="hljs-variable constant_">TRACKS</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">TalksApi</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talks-api&#x27;</span>;
+
+<span class="hljs-meta">@Component</span>({
+  <span class="hljs-attr">selector</span>: <span class="hljs-string">&#x27;app-talk-list&#x27;</span>,
+  <span class="hljs-attr">imports</span>: [<span class="hljs-title class_">RouterLink</span>],
+  <span class="hljs-attr">templateUrl</span>: <span class="hljs-string">&#x27;./talk-list.html&#x27;</span>,
+  <span class="hljs-attr">styleUrl</span>: <span class="hljs-string">&#x27;./talk-list.css&#x27;</span>,
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TalkList</span> {
+  <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> api = <span class="hljs-title function_">inject</span>(<span class="hljs-title class_">TalksApi</span>);
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> talks = httpResource&lt;<span class="hljs-title class_">Talk</span>[]&gt;(<span class="hljs-function">() =&gt;</span> <span class="hljs-string">&#x27;/api/talks&#x27;</span>, { <span class="hljs-attr">defaultValue</span>: [] });
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> query = <span class="hljs-title function_">signal</span>(<span class="hljs-string">&#x27;&#x27;</span>);
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> track = signal&lt;<span class="hljs-title class_">Track</span> | <span class="hljs-string">&#x27;All&#x27;</span>&gt;(<span class="hljs-string">&#x27;All&#x27;</span>);
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> <span class="hljs-attr">trackOptions</span>: (<span class="hljs-title class_">Track</span> | <span class="hljs-string">&#x27;All&#x27;</span>)[] = [<span class="hljs-string">&#x27;All&#x27;</span>, ...<span class="hljs-variable constant_">TRACKS</span>];
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> filtered = <span class="hljs-title function_">computed</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-keyword">const</span> talks = <span class="hljs-variable language_">this</span>.<span class="hljs-property">talks</span>.<span class="hljs-title function_">hasValue</span>() ? <span class="hljs-variable language_">this</span>.<span class="hljs-property">talks</span>.<span class="hljs-title function_">value</span>() : [];
+    <span class="hljs-keyword">const</span> query = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">query</span>().<span class="hljs-title function_">trim</span>().<span class="hljs-title function_">toLowerCase</span>();
+    <span class="hljs-keyword">const</span> track = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">track</span>();
+
+    <span class="hljs-keyword">return</span> talks.<span class="hljs-title function_">filter</span>(
+      <span class="hljs-function">(<span class="hljs-params">talk</span>) =&gt;</span>
+        (track === <span class="hljs-string">&#x27;All&#x27;</span> || talk.<span class="hljs-property">track</span> === track) &amp;&amp;
+        <span class="hljs-string">`<span class="hljs-subst">${talk.title}</span> <span class="hljs-subst">${talk.speaker}</span>`</span>.<span class="hljs-title function_">toLowerCase</span>().<span class="hljs-title function_">includes</span>(query),
+    );
+  });
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-title function_">delete</span>(<span class="hljs-attr">talk</span>: <span class="hljs-title class_">Talk</span>): <span class="hljs-built_in">void</span> {
+    <span class="hljs-keyword">if</span> (!<span class="hljs-title function_">confirm</span>(<span class="hljs-string">`Delete &quot;<span class="hljs-subst">${talk.title}</span>&quot;?`</span>)) <span class="hljs-keyword">return</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">talks</span>.<span class="hljs-title function_">update</span>(<span class="hljs-function">(<span class="hljs-params">talks</span>) =&gt;</span> talks.<span class="hljs-title function_">filter</span>(<span class="hljs-function">(<span class="hljs-params">t</span>) =&gt;</span> t.<span class="hljs-property">id</span> !== talk.<span class="hljs-property">id</span>));
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">api</span>.<span class="hljs-title function_">delete</span>(talk.<span class="hljs-property">id</span>).<span class="hljs-title function_">subscribe</span>({ <span class="hljs-attr">error</span>: <span class="hljs-function">() =&gt;</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">talks</span>.<span class="hljs-title function_">reload</span>() });
+  }
+}</code></pre></figure><p>Replace the contents of <code>src/app/talks/talk-list.html</code> with the code below. The only change is the new <strong>Delete</strong> button next to <strong>Edit</strong>.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-list.html</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-tag">&lt;<span class="hljs-name">header</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;page-header&quot;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>Talks<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">p</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;lede&quot;</span>&gt;</span>
+      @if (talks.isLoading()) {
+        Loading…
+      } @else {
+        {{ filtered().length }} of {{ talks.value().length }} talks
+      }
+    <span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/talks/new&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn primary&quot;</span>&gt;</span>+ New talk<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">header</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;filters&quot;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">input</span>
+    <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;search&quot;</span>
+    <span class="hljs-attr">placeholder</span>=<span class="hljs-string">&quot;Search by title or speaker…&quot;</span>
+    <span class="hljs-attr">aria-label</span>=<span class="hljs-string">&quot;Search talks&quot;</span>
+    [<span class="hljs-attr">value</span>]=<span class="hljs-string">&quot;query()&quot;</span>
+    (<span class="hljs-attr">input</span>)=<span class="hljs-string">&quot;query.set($any($event.target).value)&quot;</span>
+  /&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;chips&quot;</span> <span class="hljs-attr">role</span>=<span class="hljs-string">&quot;group&quot;</span> <span class="hljs-attr">aria-label</span>=<span class="hljs-string">&quot;Track&quot;</span>&gt;</span>
+    @for (option of trackOptions; track option) {
+      <span class="hljs-tag">&lt;<span class="hljs-name">button</span>
+        <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;button&quot;</span>
+        <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;chip&quot;</span>
+        [<span class="hljs-attr">attr.aria-pressed</span>]=<span class="hljs-string">&quot;track() === option&quot;</span>
+        (<span class="hljs-attr">click</span>)=<span class="hljs-string">&quot;track.set(option)&quot;</span>
+      &gt;</span>
+        {{ option }}
+      <span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+    }
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+@if (talks.error()) {
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;alert&quot;</span> <span class="hljs-attr">role</span>=<span class="hljs-string">&quot;alert&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>Could not load talks. Is the API running?<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;button&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn&quot;</span> (<span class="hljs-attr">click</span>)=<span class="hljs-string">&quot;talks.reload()&quot;</span>&gt;</span>Try again<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+} @else if (talks.isLoading() &amp;&amp; talks.value().length === 0) {
+  <span class="hljs-tag">&lt;<span class="hljs-name">ul</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;list&quot;</span> <span class="hljs-attr">aria-busy</span>=<span class="hljs-string">&quot;true&quot;</span>&gt;</span>
+    @for (i of [1, 2, 3]; track i) {
+      <span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;skeleton&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>
+    }
+  <span class="hljs-tag">&lt;/<span class="hljs-name">ul</span>&gt;</span>
+} @else {
+  <span class="hljs-tag">&lt;<span class="hljs-name">ul</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;list&quot;</span>&gt;</span>
+    @for (talk of filtered(); track talk.id) {
+      <span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;row&quot;</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;info&quot;</span>&gt;</span>
+          <span class="hljs-tag">&lt;<span class="hljs-name">a</span> [<span class="hljs-attr">routerLink</span>]=<span class="hljs-string">&quot;[&#x27;/talks&#x27;, talk.id]&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;title&quot;</span>&gt;</span>{{ talk.title }}<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+          <span class="hljs-tag">&lt;<span class="hljs-name">p</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;meta&quot;</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;track&quot;</span> [<span class="hljs-attr">attr.data-track</span>]=<span class="hljs-string">&quot;talk.track&quot;</span>&gt;</span>{{ talk.track }}<span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span>
+            {{ talk.speaker }} · {{ talk.level }} · {{ talk.duration }} min
+          <span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;actions&quot;</span>&gt;</span>
+          <span class="hljs-tag">&lt;<span class="hljs-name">a</span> [<span class="hljs-attr">routerLink</span>]=<span class="hljs-string">&quot;[&#x27;/talks&#x27;, talk.id]&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn&quot;</span>&gt;</span>Edit<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+          <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;button&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn danger&quot;</span> (<span class="hljs-attr">click</span>)=<span class="hljs-string">&quot;delete(talk)&quot;</span>&gt;</span>Delete<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+      <span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>
+    } @empty {
+      <span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;empty&quot;</span>&gt;</span>
+        @if (talks.value().length) {
+          No talks match your search.
+        } @else {
+          No talks yet. <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/talks/new&quot;</span>&gt;</span>Add the first one.<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+        }
+      <span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>
+    }
+  <span class="hljs-tag">&lt;/<span class="hljs-name">ul</span>&gt;</span>
+}</code></pre></figure><h3>What just happened</h3>
+<p><code>delete</code> does three things, in this order:</p>
+<ol>
+<li><strong><code>this.talks.update(...)</code></strong> removes the talk from the resource&#39;s value straight away. The list and the count update before the server has even replied. This is called an <strong>optimistic update</strong>.</li>
+<li><strong><code>this.api.delete(talk.id).subscribe(...)</code></strong> sends the <code>DELETE</code> request.</li>
+<li><strong><code>error: () =&gt; this.talks.reload()</code></strong> runs only if the server refuses. The resource fetches the real list again, and the talk comes back.</li>
+</ol>
+<p>A resource&#39;s value isn&#39;t read-only. <code>set</code> and <code>update</code> change it locally until the next request replaces it.</p>
+<h3>Check it works</h3>
+<ol>
+<li>Delete a talk. It disappears at once.</li>
+<li>Refresh the page. It&#39;s still gone, because json-server saved the change to <code>api/db.json</code>.</li>
+</ol>
+<aside class="positive">
+Want your talks back? Stop the app, run <code>npm run db:reset</code>, then run <code>npm start</code> again.
+</aside>
+</section>
+<section class="step" id="s8" data-step="8" data-minutes="5" hidden>
+  <h2><span class="num">8.</span> Define the form rules with a schema</h2>
+  <p>Before building the form, you describe what a valid talk looks like. Replace the contents of <code>src/app/talks/talk-schema.ts</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-schema.ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> { max, maxLength, min, minLength, required, schema, validate } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/forms/signals&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">TalkDraft</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk&#x27;</span>;
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> talkSchema = schema&lt;<span class="hljs-title class_">TalkDraft</span>&gt;(<span class="hljs-function">(<span class="hljs-params">talk</span>) =&gt;</span> {
+  <span class="hljs-title function_">required</span>(talk.<span class="hljs-property">title</span>, { <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Give your talk a title&#x27;</span> });
+  <span class="hljs-title function_">maxLength</span>(talk.<span class="hljs-property">title</span>, <span class="hljs-number">80</span>, { <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Keep the title under 80 characters&#x27;</span> });
+
+  <span class="hljs-title function_">required</span>(talk.<span class="hljs-property">speaker</span>, { <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Who is giving this talk?&#x27;</span> });
+
+  <span class="hljs-title function_">min</span>(talk.<span class="hljs-property">duration</span>, <span class="hljs-number">15</span>, { <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Talks are at least 15 minutes&#x27;</span> });
+  <span class="hljs-title function_">max</span>(talk.<span class="hljs-property">duration</span>, <span class="hljs-number">90</span>, { <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Talks are at most 90 minutes&#x27;</span> });
+
+  <span class="hljs-title function_">validate</span>(talk.<span class="hljs-property">duration</span>, <span class="hljs-function">(<span class="hljs-params">{ value, valueOf }</span>) =&gt;</span>
+    <span class="hljs-title function_">valueOf</span>(talk.<span class="hljs-property">level</span>) === <span class="hljs-string">&#x27;Advanced&#x27;</span> &amp;&amp; <span class="hljs-title function_">value</span>() &lt; <span class="hljs-number">45</span>
+      ? { <span class="hljs-attr">kind</span>: <span class="hljs-string">&#x27;tooShort&#x27;</span>, <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Advanced talks need at least 45 minutes&#x27;</span> }
+      : <span class="hljs-literal">undefined</span>,
+  );
+
+  <span class="hljs-title function_">required</span>(talk.<span class="hljs-property">abstract</span>, { <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Tell attendees what the talk is about&#x27;</span> });
+  <span class="hljs-title function_">minLength</span>(talk.<span class="hljs-property">abstract</span>, <span class="hljs-number">50</span>, {
+    <span class="hljs-attr">message</span>: <span class="hljs-function">(<span class="hljs-params">{ value }</span>) =&gt;</span> <span class="hljs-string">`A little more detail please (<span class="hljs-subst">${value().length}</span>/50 characters)`</span>,
+  });
+});</code></pre></figure><h3>What just happened</h3>
+<ul>
+<li><code>schema&lt;TalkDraft&gt;(...)</code> gives you a typed path to every field: <code>talk.title</code>, <code>talk.duration</code>, and so on. A typo is a compile error.</li>
+<li><code>required</code>, <code>min</code>, <code>max</code>, <code>minLength</code> and <code>maxLength</code> are built-in rules. Each one takes a message to show the user.</li>
+<li><code>validate</code> is a custom rule. It uses <code>valueOf(talk.level)</code> to read a <strong>different</strong> field, so this rule depends on two fields. Change the level and the duration error appears or disappears straight away.</li>
+</ul>
+<p>The schema has no idea it will be used in a form. That makes it easy to test on its own, which is exactly what <code>talk-schema.spec.ts</code> does.</p>
+<h3>Check it works</h3>
+<p>Run the tests again:</p>
+<figure class="code"><div class="code-head plain"><span class="lang">bash</span><button type="button" class="copy">Copy</button></div><pre><code>npm <span class="hljs-built_in">test</span></code></pre></figure><p>All 5 tests pass.</p>
+
+</section>
+<section class="step" id="s9" data-step="9" data-minutes="7" hidden>
+  <h2><span class="num">9.</span> Build the form</h2>
+  <p>First create the component that shows a field&#39;s error message. Create <code>src/app/talks/field-error.ts</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/field-error.ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Component</span>, input } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/core&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">FieldState</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/forms/signals&#x27;</span>;
+
+<span class="hljs-meta">@Component</span>({
+  <span class="hljs-attr">selector</span>: <span class="hljs-string">&#x27;app-field-error&#x27;</span>,
+  <span class="hljs-attr">template</span>: <span class="hljs-string">`
+    @let state = field();
+    @if (state.touched() &amp;&amp; state.invalid()) {
+      &lt;p&gt;{{ state.errors()[0].message }}&lt;/p&gt;
+    }
+  `</span>,
+  <span class="hljs-attr">host</span>: { <span class="hljs-string">&#x27;aria-live&#x27;</span>: <span class="hljs-string">&#x27;polite&#x27;</span> },
+  <span class="hljs-attr">styles</span>: <span class="hljs-string">`p { margin: .375rem 0 0; font-size: .875rem; color: var(--red); }`</span>,
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">FieldError</span> {
+  <span class="hljs-keyword">readonly</span> field = input.<span class="hljs-property">required</span>&lt;<span class="hljs-title class_">FieldState</span>&lt;<span class="hljs-built_in">unknown</span>&gt;&gt;();
+}</code></pre></figure><p>Replace the contents of <code>src/app/talks/talk-form.ts</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-form.ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> { <span class="hljs-title class_">JsonPipe</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/common&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Component</span>, signal } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/core&#x27;</span>;
+<span class="hljs-keyword">import</span> { form, <span class="hljs-title class_">FormField</span>, <span class="hljs-title class_">FormRoot</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/forms/signals&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">RouterLink</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/router&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">FieldError</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./field-error&#x27;</span>;
+<span class="hljs-keyword">import</span> { emptyDraft, <span class="hljs-variable constant_">LEVELS</span>, <span class="hljs-title class_">TalkDraft</span>, <span class="hljs-variable constant_">TRACKS</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk&#x27;</span>;
+<span class="hljs-keyword">import</span> { talkSchema } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk-schema&#x27;</span>;
+
+<span class="hljs-meta">@Component</span>({
+  <span class="hljs-attr">selector</span>: <span class="hljs-string">&#x27;app-talk-form&#x27;</span>,
+  <span class="hljs-attr">imports</span>: [<span class="hljs-title class_">RouterLink</span>, <span class="hljs-title class_">FormField</span>, <span class="hljs-title class_">FormRoot</span>, <span class="hljs-title class_">FieldError</span>, <span class="hljs-title class_">JsonPipe</span>],
+  <span class="hljs-attr">templateUrl</span>: <span class="hljs-string">&#x27;./talk-form.html&#x27;</span>,
+  <span class="hljs-attr">styleUrl</span>: <span class="hljs-string">&#x27;./talk-form.css&#x27;</span>,
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TalkForm</span> {
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> tracks = <span class="hljs-variable constant_">TRACKS</span>;
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> levels = <span class="hljs-variable constant_">LEVELS</span>;
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> model = signal&lt;<span class="hljs-title class_">TalkDraft</span>&gt;(<span class="hljs-title function_">emptyDraft</span>());
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> form = <span class="hljs-title function_">form</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">model</span>, talkSchema);
+}</code></pre></figure><p>Replace the contents of <code>src/app/talks/talk-form.html</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-form.html</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;back&quot;</span>&gt;</span>← All talks<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>New talk<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">form</span> [<span class="hljs-attr">formRoot</span>]=<span class="hljs-string">&quot;form&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;card&quot;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;title&quot;</span>&gt;</span>Title<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;title&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.title&quot;</span> /&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.title()&quot;</span> /&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;speaker&quot;</span>&gt;</span>Speaker<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;speaker&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.speaker&quot;</span> /&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.speaker()&quot;</span> /&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;row&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;track&quot;</span>&gt;</span>Track<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">select</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;track&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.track&quot;</span>&gt;</span>
+        @for (track of tracks; track track) {
+          <span class="hljs-tag">&lt;<span class="hljs-name">option</span> [<span class="hljs-attr">value</span>]=<span class="hljs-string">&quot;track&quot;</span>&gt;</span>{{ track }}<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+        }
+      <span class="hljs-tag">&lt;/<span class="hljs-name">select</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;level&quot;</span>&gt;</span>Level<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">select</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;level&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.level&quot;</span>&gt;</span>
+        @for (level of levels; track level) {
+          <span class="hljs-tag">&lt;<span class="hljs-name">option</span> [<span class="hljs-attr">value</span>]=<span class="hljs-string">&quot;level&quot;</span>&gt;</span>{{ level }}<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+        }
+      <span class="hljs-tag">&lt;/<span class="hljs-name">select</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;duration&quot;</span>&gt;</span>Minutes<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;duration&quot;</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;number&quot;</span> <span class="hljs-attr">step</span>=<span class="hljs-string">&quot;5&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.duration&quot;</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.duration()&quot;</span> /&gt;</span>
+
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;abstract&quot;</span>&gt;</span>Abstract<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">textarea</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;abstract&quot;</span> <span class="hljs-attr">rows</span>=<span class="hljs-string">&quot;5&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.abstract&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">textarea</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.abstract()&quot;</span> /&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;actions&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;submit&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn primary&quot;</span>&gt;</span>Create talk<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn&quot;</span>&gt;</span>Cancel<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">form</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">pre</span>&gt;</span>{{ model() | json }}<span class="hljs-tag">&lt;/<span class="hljs-name">pre</span>&gt;</span></code></pre></figure><h3>What just happened</h3>
+<ul>
+<li><strong>The model is a plain signal.</strong> <code>model</code> holds a <code>TalkDraft</code>, and it is the single source of truth for the form.</li>
+<li><strong><code>form(this.model, talkSchema)</code></strong> wraps that signal in a <strong>field tree</strong>. <code>form.title</code>, <code>form.duration</code> and the rest each point at one part of the model, with your schema&#39;s rules attached.</li>
+<li><strong><code>[formField]=&quot;form.title&quot;</code></strong> binds an input to a field in both directions. Typing updates <code>model</code>, and changing <code>model</code> updates the input. It works the same for text inputs, number inputs, selects and textareas.</li>
+<li><strong><code>form.title()</code></strong> (with the parentheses) gives you the field&#39;s <strong>state</strong>: <code>value()</code>, <code>valid()</code>, <code>errors()</code>, <code>touched()</code> and more, all signals. <code>FieldError</code> reads that state and shows the first error once the user has left the field.</li>
+<li><strong><code>[formRoot]=&quot;form&quot;</code></strong> connects the <code>&lt;form&gt;</code> element to the field tree. It also stops the browser from reloading the page when the form is submitted.</li>
+</ul>
+<p>The <code>&lt;pre&gt;</code> at the bottom is temporary. It prints the model so you can watch it change.</p>
+<h3>Check it works</h3>
+<ol>
+<li>Click <strong>+ New talk</strong>. Type in the <strong>Title</strong> box and watch the JSON under the form update with every keystroke.</li>
+<li>Click into <strong>Speaker</strong>, then click somewhere else. &quot;Who is giving this talk?&quot; appears.</li>
+<li>Set <strong>Level</strong> to <strong>Advanced</strong> and <strong>Minutes</strong> to <code>30</code>, then leave the field. &quot;Advanced talks need at least 45 minutes&quot; appears. Change the level to <strong>Beginner</strong> and it disappears.</li>
+<li>Click <strong>Create talk</strong>. Nothing happens yet. That&#39;s the next step.</li>
+</ol>
+
+</section>
+<section class="step" id="s10" data-step="10" data-minutes="5" hidden>
+  <h2><span class="num">10.</span> Submit the form</h2>
+  <p>Replace the contents of <code>src/app/talks/talk-form.ts</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-form.ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Component</span>, inject, signal } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/core&#x27;</span>;
+<span class="hljs-keyword">import</span> { form, <span class="hljs-title class_">FormField</span>, <span class="hljs-title class_">FormRoot</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/forms/signals&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Router</span>, <span class="hljs-title class_">RouterLink</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/router&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">FieldError</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./field-error&#x27;</span>;
+<span class="hljs-keyword">import</span> { emptyDraft, <span class="hljs-variable constant_">LEVELS</span>, <span class="hljs-title class_">TalkDraft</span>, <span class="hljs-variable constant_">TRACKS</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk&#x27;</span>;
+<span class="hljs-keyword">import</span> { talkSchema } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk-schema&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">TalksApi</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talks-api&#x27;</span>;
+
+<span class="hljs-meta">@Component</span>({
+  <span class="hljs-attr">selector</span>: <span class="hljs-string">&#x27;app-talk-form&#x27;</span>,
+  <span class="hljs-attr">imports</span>: [<span class="hljs-title class_">RouterLink</span>, <span class="hljs-title class_">FormField</span>, <span class="hljs-title class_">FormRoot</span>, <span class="hljs-title class_">FieldError</span>],
+  <span class="hljs-attr">templateUrl</span>: <span class="hljs-string">&#x27;./talk-form.html&#x27;</span>,
+  <span class="hljs-attr">styleUrl</span>: <span class="hljs-string">&#x27;./talk-form.css&#x27;</span>,
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TalkForm</span> {
+  <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> api = <span class="hljs-title function_">inject</span>(<span class="hljs-title class_">TalksApi</span>);
+  <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> router = <span class="hljs-title function_">inject</span>(<span class="hljs-title class_">Router</span>);
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> tracks = <span class="hljs-variable constant_">TRACKS</span>;
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> levels = <span class="hljs-variable constant_">LEVELS</span>;
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> model = signal&lt;<span class="hljs-title class_">TalkDraft</span>&gt;(<span class="hljs-title function_">emptyDraft</span>());
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> form = <span class="hljs-title function_">form</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">model</span>, talkSchema, {
+    <span class="hljs-attr">submission</span>: {
+      <span class="hljs-attr">action</span>: <span class="hljs-title function_">async</span> (field) =&gt; {
+        <span class="hljs-keyword">try</span> {
+          <span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">api</span>.<span class="hljs-title function_">create</span>(<span class="hljs-title function_">field</span>().<span class="hljs-title function_">value</span>());
+          <span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">router</span>.<span class="hljs-title function_">navigate</span>([<span class="hljs-string">&#x27;/&#x27;</span>]);
+          <span class="hljs-keyword">return</span> <span class="hljs-literal">undefined</span>;
+        } <span class="hljs-keyword">catch</span> {
+          <span class="hljs-keyword">return</span> { <span class="hljs-attr">kind</span>: <span class="hljs-string">&#x27;server&#x27;</span>, <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Could not save the talk. Please try again.&#x27;</span> };
+        }
+      },
+    },
+  });
+}</code></pre></figure><p>Replace the contents of <code>src/app/talks/talk-form.html</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-form.html</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;back&quot;</span>&gt;</span>← All talks<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>New talk<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">form</span> [<span class="hljs-attr">formRoot</span>]=<span class="hljs-string">&quot;form&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;card&quot;</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;title&quot;</span>&gt;</span>Title<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;title&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.title&quot;</span> /&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.title()&quot;</span> /&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;speaker&quot;</span>&gt;</span>Speaker<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;speaker&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.speaker&quot;</span> /&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.speaker()&quot;</span> /&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;row&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;track&quot;</span>&gt;</span>Track<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">select</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;track&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.track&quot;</span>&gt;</span>
+        @for (track of tracks; track track) {
+          <span class="hljs-tag">&lt;<span class="hljs-name">option</span> [<span class="hljs-attr">value</span>]=<span class="hljs-string">&quot;track&quot;</span>&gt;</span>{{ track }}<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+        }
+      <span class="hljs-tag">&lt;/<span class="hljs-name">select</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;level&quot;</span>&gt;</span>Level<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">select</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;level&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.level&quot;</span>&gt;</span>
+        @for (level of levels; track level) {
+          <span class="hljs-tag">&lt;<span class="hljs-name">option</span> [<span class="hljs-attr">value</span>]=<span class="hljs-string">&quot;level&quot;</span>&gt;</span>{{ level }}<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+        }
+      <span class="hljs-tag">&lt;/<span class="hljs-name">select</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;duration&quot;</span>&gt;</span>Minutes<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;duration&quot;</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;number&quot;</span> <span class="hljs-attr">step</span>=<span class="hljs-string">&quot;5&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.duration&quot;</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.duration()&quot;</span> /&gt;</span>
+
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;abstract&quot;</span>&gt;</span>Abstract<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">textarea</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;abstract&quot;</span> <span class="hljs-attr">rows</span>=<span class="hljs-string">&quot;5&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.abstract&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">textarea</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.abstract()&quot;</span> /&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+  @for (error of form().errors(); track $index) {
+    <span class="hljs-tag">&lt;<span class="hljs-name">p</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;server-error&quot;</span> <span class="hljs-attr">role</span>=<span class="hljs-string">&quot;alert&quot;</span>&gt;</span>{{ error.message }}<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+  }
+
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;actions&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;submit&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn primary&quot;</span> [<span class="hljs-attr">disabled</span>]=<span class="hljs-string">&quot;form().submitting()&quot;</span>&gt;</span>
+      {{ form().submitting() ? &#x27;Saving…&#x27; : &#x27;Create talk&#x27; }}
+    <span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn&quot;</span>&gt;</span>Cancel<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">form</span>&gt;</span></code></pre></figure><h3>What just happened</h3>
+<p>The third argument to <code>form()</code> holds the <strong>submission action</strong>. When the user submits, Signal Forms:</p>
+<ol>
+<li>Marks every field as touched, so all the error messages show.</li>
+<li>Stops if the form is invalid. Your action never runs with bad data.</li>
+<li>Sets <code>submitting()</code> to <code>true</code> and calls your action.</li>
+<li>Waits for the Promise your action returns, then sets <code>submitting()</code> back to <code>false</code>.</li>
+</ol>
+<p>What the action returns decides what happens next:</p>
+<ul>
+<li><strong><code>undefined</code></strong> means it worked. Here, you&#39;ve already navigated back to the list.</li>
+<li><strong>An error object</strong> is attached to the form. The template shows it through <code>form().errors()</code>.</li>
+</ul>
+<p>This is why <code>TalksApi.create</code> returns a Promise: <code>submitting()</code> stays <code>true</code> exactly as long as the request takes.</p>
+<h3>Check it works</h3>
+<ol>
+<li>Click <strong>Create talk</strong> on the empty form. Every error message appears at once.</li>
+<li>Fill the form in properly and click <strong>Create talk</strong>. The button reads &quot;Saving…&quot;, then you&#39;re back on the list with your new talk at the bottom.</li>
+<li><strong>Test a server error:</strong> open a new talk form and fill it in. In DevTools, open the <strong>Network</strong> tab and set throttling to <strong>Offline</strong>. Click <strong>Create talk</strong> and &quot;Could not save the talk. Please try again.&quot; appears. Set throttling back to <strong>No throttling</strong> afterwards.</li>
+</ol>
+
+</section>
+<section class="step" id="s11" data-step="11" data-minutes="6" hidden>
+  <h2><span class="num">11.</span> Edit a talk with linkedSignal</h2>
+  <p>The <code>/talks/:id</code> route already points at <code>TalkForm</code>. Now teach the form to load an existing talk and save changes to it.</p>
+<p>Replace the contents of <code>src/app/talks/talk-form.ts</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-form.ts</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> { httpResource } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/common/http&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Component</span>, computed, inject, input, linkedSignal } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/core&#x27;</span>;
+<span class="hljs-keyword">import</span> { form, <span class="hljs-title class_">FormField</span>, <span class="hljs-title class_">FormRoot</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/forms/signals&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Router</span>, <span class="hljs-title class_">RouterLink</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@angular/router&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">FieldError</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./field-error&#x27;</span>;
+<span class="hljs-keyword">import</span> { emptyDraft, <span class="hljs-variable constant_">LEVELS</span>, <span class="hljs-title class_">Talk</span>, <span class="hljs-title class_">TalkDraft</span>, toDraft, <span class="hljs-variable constant_">TRACKS</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk&#x27;</span>;
+<span class="hljs-keyword">import</span> { talkSchema } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talk-schema&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">TalksApi</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./talks-api&#x27;</span>;
+
+<span class="hljs-meta">@Component</span>({
+  <span class="hljs-attr">selector</span>: <span class="hljs-string">&#x27;app-talk-form&#x27;</span>,
+  <span class="hljs-attr">imports</span>: [<span class="hljs-title class_">RouterLink</span>, <span class="hljs-title class_">FormField</span>, <span class="hljs-title class_">FormRoot</span>, <span class="hljs-title class_">FieldError</span>],
+  <span class="hljs-attr">templateUrl</span>: <span class="hljs-string">&#x27;./talk-form.html&#x27;</span>,
+  <span class="hljs-attr">styleUrl</span>: <span class="hljs-string">&#x27;./talk-form.css&#x27;</span>,
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TalkForm</span> {
+  <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> api = <span class="hljs-title function_">inject</span>(<span class="hljs-title class_">TalksApi</span>);
+  <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> router = <span class="hljs-title function_">inject</span>(<span class="hljs-title class_">Router</span>);
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> tracks = <span class="hljs-variable constant_">TRACKS</span>;
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> levels = <span class="hljs-variable constant_">LEVELS</span>;
+
+  <span class="hljs-keyword">readonly</span> id = input&lt;<span class="hljs-built_in">string</span>&gt;();
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> isEdit = <span class="hljs-title function_">computed</span>(<span class="hljs-function">() =&gt;</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">id</span>() !== <span class="hljs-literal">undefined</span>);
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> talk = httpResource&lt;<span class="hljs-title class_">Talk</span>&gt;(<span class="hljs-function">() =&gt;</span>
+    <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">id</span>() ? <span class="hljs-string">`/api/talks/<span class="hljs-subst">${<span class="hljs-variable language_">this</span>.id()}</span>`</span> : <span class="hljs-literal">undefined</span>,
+  );
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> model = linkedSignal&lt;<span class="hljs-title class_">TalkDraft</span>&gt;(<span class="hljs-function">() =&gt;</span>
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">talk</span>.<span class="hljs-title function_">hasValue</span>() ? <span class="hljs-title function_">toDraft</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">talk</span>.<span class="hljs-title function_">value</span>()) : <span class="hljs-title function_">emptyDraft</span>(),
+  );
+
+  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">readonly</span> form = <span class="hljs-title function_">form</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">model</span>, talkSchema, {
+    <span class="hljs-attr">submission</span>: {
+      <span class="hljs-attr">action</span>: <span class="hljs-title function_">async</span> (field) =&gt; {
+        <span class="hljs-keyword">const</span> draft = <span class="hljs-title function_">field</span>().<span class="hljs-title function_">value</span>();
+        <span class="hljs-keyword">const</span> id = <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">id</span>();
+        <span class="hljs-keyword">try</span> {
+          <span class="hljs-keyword">if</span> (id) {
+            <span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">api</span>.<span class="hljs-title function_">update</span>(id, draft);
+          } <span class="hljs-keyword">else</span> {
+            <span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">api</span>.<span class="hljs-title function_">create</span>(draft);
+          }
+          <span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">router</span>.<span class="hljs-title function_">navigate</span>([<span class="hljs-string">&#x27;/&#x27;</span>]);
+          <span class="hljs-keyword">return</span> <span class="hljs-literal">undefined</span>;
+        } <span class="hljs-keyword">catch</span> {
+          <span class="hljs-keyword">return</span> { <span class="hljs-attr">kind</span>: <span class="hljs-string">&#x27;server&#x27;</span>, <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Could not save the talk. Please try again.&#x27;</span> };
+        }
+      },
+    },
+  });
+}</code></pre></figure><p>Replace the contents of <code>src/app/talks/talk-form.html</code> with the code below.</p>
+<figure class="code paste"><div class="code-head"><span class="file">src/app/talks/talk-form.html</span><button type="button" class="copy">Copy</button></div><pre><code><span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;back&quot;</span>&gt;</span>← All talks<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>{{ isEdit() ? &#x27;Edit talk&#x27; : &#x27;New talk&#x27; }}<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
+
+@if (talk.error()) {
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;alert&quot;</span> <span class="hljs-attr">role</span>=<span class="hljs-string">&quot;alert&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>We couldn&#x27;t find that talk.<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn&quot;</span>&gt;</span>Back to all talks<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+} @else if (talk.isLoading()) {
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;card&quot;</span> <span class="hljs-attr">aria-busy</span>=<span class="hljs-string">&quot;true&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;skeleton&quot;</span> <span class="hljs-attr">style</span>=<span class="hljs-string">&quot;block-size: 2.5rem&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;skeleton&quot;</span> <span class="hljs-attr">style</span>=<span class="hljs-string">&quot;block-size: 2.5rem&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;skeleton&quot;</span> <span class="hljs-attr">style</span>=<span class="hljs-string">&quot;block-size: 8rem&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+} @else {
+  <span class="hljs-tag">&lt;<span class="hljs-name">form</span> [<span class="hljs-attr">formRoot</span>]=<span class="hljs-string">&quot;form&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;card&quot;</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;title&quot;</span>&gt;</span>Title<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;title&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.title&quot;</span> /&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.title()&quot;</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;speaker&quot;</span>&gt;</span>Speaker<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;speaker&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.speaker&quot;</span> /&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.speaker()&quot;</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;row&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;track&quot;</span>&gt;</span>Track<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">select</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;track&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.track&quot;</span>&gt;</span>
+          @for (track of tracks; track track) {
+            <span class="hljs-tag">&lt;<span class="hljs-name">option</span> [<span class="hljs-attr">value</span>]=<span class="hljs-string">&quot;track&quot;</span>&gt;</span>{{ track }}<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+          }
+        <span class="hljs-tag">&lt;/<span class="hljs-name">select</span>&gt;</span>
+      <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+      <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;level&quot;</span>&gt;</span>Level<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">select</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;level&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.level&quot;</span>&gt;</span>
+          @for (level of levels; track level) {
+            <span class="hljs-tag">&lt;<span class="hljs-name">option</span> [<span class="hljs-attr">value</span>]=<span class="hljs-string">&quot;level&quot;</span>&gt;</span>{{ level }}<span class="hljs-tag">&lt;/<span class="hljs-name">option</span>&gt;</span>
+          }
+        <span class="hljs-tag">&lt;/<span class="hljs-name">select</span>&gt;</span>
+      <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+      <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;duration&quot;</span>&gt;</span>Minutes<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;duration&quot;</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;number&quot;</span> <span class="hljs-attr">step</span>=<span class="hljs-string">&quot;5&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.duration&quot;</span> /&gt;</span>
+      <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.duration()&quot;</span> /&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;field&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">&quot;abstract&quot;</span>&gt;</span>Abstract<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">textarea</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;abstract&quot;</span> <span class="hljs-attr">rows</span>=<span class="hljs-string">&quot;5&quot;</span> [<span class="hljs-attr">formField</span>]=<span class="hljs-string">&quot;form.abstract&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">textarea</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">app-field-error</span> [<span class="hljs-attr">field</span>]=<span class="hljs-string">&quot;form.abstract()&quot;</span> /&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+    @for (error of form().errors(); track $index) {
+      <span class="hljs-tag">&lt;<span class="hljs-name">p</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;server-error&quot;</span> <span class="hljs-attr">role</span>=<span class="hljs-string">&quot;alert&quot;</span>&gt;</span>{{ error.message }}<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+    }
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;actions&quot;</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;submit&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn primary&quot;</span> [<span class="hljs-attr">disabled</span>]=<span class="hljs-string">&quot;form().submitting()&quot;</span>&gt;</span>
+        {{ form().submitting() ? &#x27;Saving…&#x27; : isEdit() ? &#x27;Save changes&#x27; : &#x27;Create talk&#x27; }}
+      <span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+      <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">routerLink</span>=<span class="hljs-string">&quot;/&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;btn&quot;</span>&gt;</span>Cancel<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;/<span class="hljs-name">form</span>&gt;</span>
+}</code></pre></figure><h3>What just happened</h3>
+<p>Four pieces fit together:</p>
+<ol>
+<li><strong><code>id = input&lt;string&gt;()</code></strong> receives <code>:id</code> from the URL, thanks to <code>withComponentInputBinding()</code> from step 4. On <code>/talks/new</code> there is no <code>:id</code>, so it stays <code>undefined</code>.</li>
+<li><strong><code>httpResource</code></strong> reads <code>this.id()</code>. When the URL function returns <code>undefined</code>, the resource sends no request at all. So the same component loads a talk when editing and does nothing when creating.</li>
+<li><strong><code>linkedSignal</code></strong> is a writable signal whose starting value comes from other signals. Here the starting value is the loaded talk, or an empty draft. The form can then write to it freely, and if the talk ever reloads, the model resets to the new data.</li>
+<li><strong>The submission action</strong> calls <code>update</code> when there is an <code>id</code>, and <code>create</code> when there isn&#39;t.</li>
+</ol>
+<aside class="positive">
+Why not use a plain <code>signal</code> for the model? A plain signal is set once, before the talk has loaded. A <code>computed</code> would follow the talk but can't be written to, so the form couldn't change it. <code>linkedSignal</code> is both: it follows its source and accepts writes.
+</aside>
+
+<h3>Check it works</h3>
+<ol>
+<li>Click <strong>Edit</strong> on any talk. You briefly see the loading skeleton, then the form, filled in with that talk.</li>
+<li>Change the title and click <strong>Save changes</strong>. The list shows the new title.</li>
+<li>Open <a href="http://localhost:4200/talks/does-not-exist" target="_blank" rel="noopener">http://localhost:4200/talks/does-not-exist</a>. You see &quot;We couldn&#39;t find that talk.&quot;</li>
+<li>Click <strong>+ New talk</strong>. The form is empty and the button reads <strong>Create talk</strong>.</li>
+</ol>
+
+</section>
+<section class="step" id="s12" data-step="12" data-minutes="2" hidden>
+  <h2><span class="num">12.</span> Congratulations</h2>
+  <p>You built a complete CRUD app with modern Angular, and every piece of state in it is a signal.</p>
+<h3>What you used</h3>
+<div class="table"><table><thead><tr><th>API</th><th>Where</th></tr></thead><tbody><tr><td><code>httpResource</code></td><td>Loading the list, and loading one talk by id</td></tr><tr><td><code>signal</code></td><td>The search query and the track filter</td></tr><tr><td><code>computed</code></td><td>The filtered list, and <code>isEdit</code></td></tr><tr><td><code>linkedSignal</code></td><td>The form model that follows the loaded talk</td></tr><tr><td><code>schema</code>, <code>validate</code></td><td>The form rules, including one that reads two fields</td></tr><tr><td><code>form</code>, <code>[formField]</code>, <code>[formRoot]</code></td><td>Binding and submitting the form</td></tr><tr><td><code>HttpClient</code></td><td>Creating, updating and deleting</td></tr></tbody></table></div><h3>What&#39;s next</h3>
+<ul>
+<li>Read the <a href="https://angular.dev/guide/signals" target="_blank" rel="noopener">Signals guide</a> and the <a href="https://angular.dev/guide/signals/resource" target="_blank" rel="noopener">Resource guide</a> on angular.dev.</li>
+<li>Read the <a href="https://angular.dev/guide/forms/signals/overview" target="_blank" rel="noopener">Signal Forms guide</a>.</li>
+<li>Show a live character count under the abstract, using <code>computed</code>.</li>
+<li>Add a new rule to <code>talkSchema</code>, then write a test for it in <code>talk-schema.spec.ts</code>.</li>
+</ul>
+<h3>Reset your data</h3>
+<p>To get the original talks back at any time:</p>
+<figure class="code"><div class="code-head plain"><span class="lang">bash</span><button type="button" class="copy">Copy</button></div><pre><code>npm run db:reset</code></pre></figure><p>Thank you for building with us at DevFest Lagos 2026.</p>
+
+</section>
+    </article>
+    <div class="pager">
+      <button type="button" class="btn" id="back">Back</button>
+      <button type="button" class="btn primary" id="next">Next</button>
+    </div>
+  </main>
+</div>
+<script>
+(() => {
+  const steps = [...document.querySelectorAll('.step')];
+  const links = [...document.querySelectorAll('.steps a')];
+  const back = document.getElementById('back');
+  const next = document.getElementById('next');
+  const remaining = document.getElementById('remaining');
+  const bar = document.getElementById('bar');
+  const rail = document.getElementById('steps');
+  const menu = document.querySelector('.menu');
+  const total = steps.length;
+  const KEY = 'codelab-step';
+
+  const store = {
+    get() { try { return Number(localStorage.getItem(KEY)) || 0; } catch { return 0; } },
+    set(n) { try { localStorage.setItem(KEY, String(n)); } catch {} },
+  };
+
+  const fromHash = () => {
+    const n = Number(location.hash.slice(1));
+    return Number.isInteger(n) && n >= 1 && n <= total ? n : 0;
+  };
+
+  function show(n, scroll) {
+    steps.forEach((s, i) => (s.hidden = i + 1 !== n));
+    links.forEach((a, i) => {
+      a.classList.toggle('done', i + 1 < n);
+      if (i + 1 === n) a.setAttribute('aria-current', 'step');
+      else a.removeAttribute('aria-current');
+    });
+    const left = steps.slice(n - 1).reduce((sum, s) => sum + Number(s.dataset.minutes), 0);
+    remaining.textContent = `${left} min${left === 1 ? '' : 's'} remaining`;
+    bar.style.width = `${((n - 1) / (total - 1)) * 100}%`;
+    back.hidden = n === 1;
+    next.textContent = n === total ? 'Done' : 'Next';
+    next.hidden = n === total;
+    store.set(n);
+    closeRail();
+    if (scroll) window.scrollTo({ top: 0 });
+  }
+
+  const go = (n) => {
+    if (location.hash === `#${n}`) show(n, true);
+    else location.hash = String(n);
+  };
+
+  back.addEventListener('click', () => go(Math.max(1, fromHash() - 1)));
+  next.addEventListener('click', () => go(Math.min(total, (fromHash() || 1) + 1)));
+  window.addEventListener('hashchange', () => show(fromHash() || 1, true));
+
+  function closeRail() {
+    rail.classList.remove('open');
+    menu.setAttribute('aria-expanded', 'false');
+  }
+  menu.addEventListener('click', () => {
+    const open = !rail.classList.contains('open');
+    rail.classList.toggle('open', open);
+    menu.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeRail();
+  });
+  document.addEventListener('click', (e) => {
+    if (rail.classList.contains('open') && !rail.contains(e.target) && !menu.contains(e.target)) closeRail();
+  });
+
+  document.addEventListener('click', async (e) => {
+    const button = e.target.closest('.copy');
+    if (!button) return;
+    const code = button.closest('.code').querySelector('code');
+    const done = () => {
+      button.textContent = 'Copied';
+      button.classList.add('copied');
+      setTimeout(() => {
+        button.textContent = 'Copy';
+        button.classList.remove('copied');
+      }, 1600);
+    };
+    try {
+      await navigator.clipboard.writeText(code.textContent + '\n');
+      done();
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      const sel = getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      button.textContent = 'Press ⌘C / Ctrl+C';
+    }
+  });
+
+  show(fromHash() || store.get() || 1, false);
+  if (!fromHash()) history.replaceState(null, '', `#${store.get() || 1}`);
+})();
+
+</script>
+</body>
+</html>
