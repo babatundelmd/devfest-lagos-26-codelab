@@ -79,6 +79,7 @@ const nav = rendered
 const css = readFileSync(join(import.meta.dirname, 'codelab.css'), 'utf8');
 const js = readFileSync(join(import.meta.dirname, 'codelab.js'), 'utf8');
 
+const updated = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 const shortTitle = 'Signals, Resources, Signal Forms';
 const content = `<title>${shortTitle}</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -93,7 +94,6 @@ ${css}
   <button type="button" class="menu" aria-label="Show steps" aria-expanded="false" aria-controls="steps">
     <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
   </button>
-  <div class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   <div class="heading">
     <p class="eyebrow">DevFest Lagos 2026 · Codelab</p>
     <h1>${escapeHtml(title)}</h1>
@@ -109,6 +109,14 @@ ${nav}
     <p class="meta">${escapeHtml(meta.authors ?? '')} · ${total} min</p>
   </nav>
   <main>
+    <header class="about" id="about">
+      <h2 class="about-title">${escapeHtml(title)}</h2>
+      <div class="card about-card">
+        <h3>About this codelab</h3>
+        <p class="about-row"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 6h16M4 10h16M4 14h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Last updated ${updated}</span></p>
+        <p class="about-row"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><circle cx="12" cy="9.5" r="3.5" fill="var(--surface)"/><path d="M5.5 18.5c1.5-2.6 3.8-3.9 6.5-3.9s5 1.3 6.5 3.9" fill="var(--surface)"/></svg><span>Written by <a href="https://www.linkedin.com/in/babatundelmd" target="_blank" rel="noopener">${escapeHtml(meta.authors ?? '')}</a></span></p>
+      </div>
+    </header>
     <article class="card">
 ${sections}
     </article>

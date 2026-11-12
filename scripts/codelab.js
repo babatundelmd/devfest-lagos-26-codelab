@@ -8,6 +8,7 @@
   const rail = document.getElementById('steps');
   const menu = document.querySelector('.menu');
   const total = steps.length;
+  const about = document.getElementById('about');
   const KEY = 'codelab-step';
 
   const store = {
@@ -31,6 +32,7 @@
     remaining.textContent = `${left} min${left === 1 ? '' : 's'} remaining`;
     bar.style.width = `${((n - 1) / (total - 1)) * 100}%`;
     back.hidden = n === 1;
+    about.hidden = n !== 1;
     next.textContent = n === total ? 'Done' : 'Next';
     next.hidden = n === total;
     store.set(n);

@@ -91,7 +91,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-padding-top: 6rem; }
+html { scroll-padding-top: 7rem; }
 body {
   margin: 0;
   background: var(--bg);
@@ -114,10 +114,11 @@ body::before {
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding-block: .75rem;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  gap: 1.25rem;
+  min-height: 5.25rem;
+  padding-block: 1rem;
+  padding-left: max(28px, env(safe-area-inset-left, 0px));
+  padding-right: max(28px, env(safe-area-inset-right, 0px));
   background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
@@ -130,15 +131,9 @@ body::before {
   border-radius: 8px;
   cursor: pointer;
 }
-.mark { display: grid; grid-template-columns: repeat(2, .55rem); gap: 3px; flex: none; }
-.mark i { display: block; inline-size: .55rem; block-size: .55rem; border-radius: 2px; }
-.mark i:nth-child(1) { background: var(--blue); }
-.mark i:nth-child(2) { background: var(--red); }
-.mark i:nth-child(3) { background: var(--yellow); }
-.mark i:nth-child(4) { background: var(--green); }
 .heading { min-width: 0; flex: 1; }
 .eyebrow {
-  margin: 0;
+  margin: 0 0 .2rem;
   font-size: .72rem;
   font-weight: 600;
   letter-spacing: .08em;
@@ -182,13 +177,24 @@ body::before {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 
-.steps { position: sticky; top: 6rem; align-self: start; max-height: calc(100vh - 7rem); overflow-y: auto; }
-.steps ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.steps {
+  position: sticky;
+  top: 6.75rem;
+  align-self: start;
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
+  padding: 4px;
+  margin: -4px;
+  scrollbar-width: none;
+}
+.steps::-webkit-scrollbar { display: none; }
+.steps ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .625rem; }
 .steps a {
   display: flex;
   align-items: center;
-  gap: .85rem;
-  padding: .8rem 1rem;
+  gap: 1rem;
+  min-height: 4rem;
+  padding: 1rem 1.15rem;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface);
@@ -216,11 +222,25 @@ body::before {
   font-variant-numeric: tabular-nums;
 }
 .steps a.done .dot { background: var(--accent-tint); color: var(--accent); }
-.steps a[aria-current="step"] { border-color: var(--accent); font-weight: 600; box-shadow: 0 1px 3px rgb(0 0 0 / .08); }
+.steps a[aria-current="step"] { border-color: var(--accent); font-weight: 600; }
+.steps a:focus:not(:focus-visible) { outline: none; }
 .steps a[aria-current="step"] .dot { background: var(--accent); color: var(--accent-ink); }
 .steps .meta { margin: 1rem .25rem 0; font-size: .85rem; color: var(--muted); }
 
 main { min-width: 0; }
+.about { display: grid; gap: 1.5rem; margin-bottom: 1.5rem; }
+.about-title {
+  margin: .5rem 0 0;
+  text-align: center;
+  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.about-card h3 { margin: 0 0 1rem; font-size: 1.5rem; font-weight: 600; }
+.about-row { display: flex; align-items: center; gap: .9rem; margin: .6rem 0 0; color: var(--ink); }
+.about-row svg { flex: none; color: var(--muted); }
+.about-row a { color: var(--accent); text-underline-offset: 2px; }
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -329,6 +349,7 @@ aside code { font: 500 .86em var(--font-code); }
     z-index: 40;
     width: min(20rem, 88vw);
     max-height: none;
+    margin: 0;
     padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem calc(1rem + env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
     background: var(--bg);
     border-right: 1px solid var(--line);
@@ -338,8 +359,7 @@ aside code { font: 500 .86em var(--font-code); }
   .steps.open { transform: none; box-shadow: 0 0 0 100vmax rgb(0 0 0 / .35); }
 }
 @media (max-width: 560px) {
-  .eyebrow, .mark { display: none; }
-  .remaining svg { display: none; }
+  .eyebrow,   .remaining svg { display: none; }
   .topbar { gap: .6rem; }
   .btn { padding: .65rem 1.2rem; }
 }
